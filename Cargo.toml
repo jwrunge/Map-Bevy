@@ -1,0 +1,40 @@
+[package]
+name = "Map-Bevy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared Bevy features for all targets
+bevy = { version = "0.16.1", default-features = false, features = [
+    "bevy_asset",
+    "bevy_state", 
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "png",
+] }
+
+# Native-specific dependencies
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bevy = { version = "0.16.1", default-features = false, features = [
+    "x11",              # Linux X11 support
+    "wayland",          # Linux Wayland support
+    "dynamic_linking",  # Faster compile times for development
+] }
+
+# WASM-specific dependencies  
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+bevy = { version = "0.16.1", default-features = false, features = [
+    "webgl2",           # WebGL2 rendering for browsers
+] }
+wasm-bindgen = "0.2"
+web-sys = "0.3"
+
+[features]
+default = []
+dev = [
+    "bevy/dynamic_linking",
+]

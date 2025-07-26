@@ -1,0 +1,25 @@
+
+# Rust
+/target/
+Cargo.lock
+
+# WASM
+/pkg/
+*.wasm
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local development
+/dist/
+/node_modules/
