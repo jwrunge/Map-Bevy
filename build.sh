@@ -31,6 +31,28 @@ if ! command_exists wasm-pack; then
     fi
 fi
 
+if ! command_exists wasm-opt; then
+    echo -e "${YELLOW}wasm-opt not found. Installing Binaryen...${NC}"
+    if command_exists brew; then
+        brew install binaryen
+    elif command_exists apt; then
+        sudo apt update && sudo apt install binaryen
+    elif command_exists yum; then
+        sudo yum install binaryen
+    else
+        echo -e "${RED}Could not install Binaryen automatically. Please install it manually:${NC}"
+        echo "  macOS: brew install binaryen"
+        echo "  Ubuntu/Debian: sudo apt install binaryen"
+        echo "  Or download from: https://github.com/WebAssembly/binaryen/releases"
+        exit 1
+    fi
+    # Verify installation
+    if ! command_exists wasm-opt; then
+        echo -e "${RED}Failed to install wasm-opt${NC}"
+        exit 1
+    fi
+fi
+
 # Build native version (windowed)
 echo -e "${YELLOW}Building native version (windowed)...${NC}"
 cargo build --release --features windowed
@@ -60,6 +82,40 @@ echo -e "${YELLOW}Building WASM version...${NC}"
 wasm-pack build --target web --out-dir pkg --release -- --features windowed
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}WASM build successful!${NC}"
+    
+    # Optimize WASM with wasm-opt
+    echo -e "${YELLOW}Optimizing WASM with wasm-opt...${NC}"
+    WASM_FILE="pkg/map_bevy_bg.wasm"
+    if [ -f "$WASM_FILE" ]; then
+        # Get original file size
+        ORIGINAL_SIZE=$(stat -f%z "$WASM_FILE" 2>/dev/null || stat -c%s "$WASM_FILE" 2>/dev/null)
+        
+        # Create backup
+        cp "$WASM_FILE" "$WASM_FILE.backup"
+        
+        # Optimize with wasm-opt
+        wasm-opt -Os --output "$WASM_FILE" "$WASM_FILE.backup"
+        
+        if [ $? -eq 0 ]; then
+            # Get optimized file size
+            OPTIMIZED_SIZE=$(stat -f%z "$WASM_FILE" 2>/dev/null || stat -c%s "$WASM_FILE" 2>/dev/null)
+            REDUCTION=$((ORIGINAL_SIZE - OPTIMIZED_SIZE))
+            PERCENT_REDUCTION=$((REDUCTION * 100 / ORIGINAL_SIZE))
+            
+            echo -e "${GREEN}WASM optimization successful!${NC}"
+            echo -e "${BLUE}Original size: ${ORIGINAL_SIZE} bytes${NC}"
+            echo -e "${BLUE}Optimized size: ${OPTIMIZED_SIZE} bytes${NC}"
+            echo -e "${BLUE}Reduction: ${REDUCTION} bytes (${PERCENT_REDUCTION}%)${NC}"
+            
+            # Remove backup
+            rm "$WASM_FILE.backup"
+        else
+            echo -e "${RED}WASM optimization failed, restoring original${NC}"
+            mv "$WASM_FILE.backup" "$WASM_FILE"
+        fi
+    else
+        echo -e "${YELLOW}WASM file not found at expected location: $WASM_FILE${NC}"
+    fi
 else
     echo -e "${RED}WASM build failed!${NC}"
     exit 1
