@@ -108,11 +108,18 @@ fi
 
 # Only build additional targets if --all is specified
 if [ "$BUILD_ALL" = true ]; then
-    # Build native version (headless)
+    # Build native version (headless) - library and example only
     echo -e "${YELLOW}Building native version (headless)...${NC}"
-    cargo build $BUILD_PROFILE $HEADLESS_DEV_FEATURES --no-default-features
+    cargo build $BUILD_PROFILE --lib --features headless --no-default-features
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}Native headless build successful!${NC}"
+        # Also build the headless example
+        cargo build $BUILD_PROFILE --example headless --features headless --no-default-features
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}Native headless build successful!${NC}"
+        else
+            echo -e "${RED}Native headless example build failed!${NC}"
+            exit 1
+        fi
     else
         echo -e "${RED}Native headless build failed!${NC}"
         exit 1
@@ -215,8 +222,8 @@ echo "  cargo run                        # Fast dev build with dynamic linking"
 echo "  cargo run --release              # Optimized release build"
 echo ""
 echo -e "${YELLOW}Headless (library):${NC}"
-echo "  cargo run --features headless --no-default-features"
-echo "  cargo run --release --features headless --no-default-features"
+echo "  cargo run --example headless --features headless --no-default-features"
+echo "  cargo run --example headless --release --features headless --no-default-features"
 echo ""
 if [ "$BUILD_ALL" = true ]; then
     echo -e "${YELLOW}WASM (browser):${NC}"

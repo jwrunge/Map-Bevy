@@ -20,25 +20,11 @@ impl MapBevyEngine {
     pub fn new_headless(width: u32, height: u32) -> Self {
         let mut app = App::new();
         
-        // Use a more complete plugin set for headless rendering
-        app.add_plugins((
-            bevy::MinimalPlugins,
-            bevy::asset::AssetPlugin::default(),
-            bevy::render::RenderPlugin::default(),
-            bevy::core_pipeline::CorePipelinePlugin::default(),
-            bevy::sprite::SpritePlugin::default(),
-            bevy::text::TextPlugin::default(),
-            bevy::ui::UiPlugin::default(),
-            bevy::pbr::PbrPlugin::default(),
-        ));
+        // Use MinimalPlugins for headless mode - much simpler
+        app.add_plugins(MinimalPlugins);
 
-        // Manually add the Image assets resource that tonemapping needs
-        app.init_resource::<bevy::asset::Assets<Image>>();
-
-        // Setup headless rendering
-        app.add_systems(Startup, setup_headless_camera)
-            .add_systems(Startup, setup_scene)
-            .add_systems(Update, rotate_camera);
+        // Setup basic rendering components
+        app.add_systems(Startup, setup_headless_camera);
 
         Self {
             app,
@@ -110,12 +96,9 @@ impl MapBevyEngine {
 }
 
 fn setup_headless_camera(mut commands: Commands) {
-    // For now, use a simple camera setup
-    // TODO: Implement proper render-to-texture for pixel buffer extraction
-    commands.spawn((
-        Camera3d::default(),
-        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
+    // For headless mode with MinimalPlugins, just add a simple entity
+    // No actual camera rendering since we don't have the render pipeline
+    commands.spawn(Name::new("Headless Camera Placeholder"));
 }
 
 #[cfg(feature = "windowed")]
@@ -132,4 +115,26 @@ fn keyboard_input(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
+}
+
+/// Run a simple headless demo - mainly for testing library integration
+pub fn run_headless_demo() {
+    println!("🗺️  Map-Bevy Headless Demo");
+    println!("Creating engine in headless mode...");
+    
+    let mut engine = MapBevyEngine::new_headless(800, 600);
+    
+    println!("Running 10 simulation steps...");
+    for step in 1..=10 {
+        engine.update();
+        println!("Step {}: Engine updated", step);
+        
+        // In minimal mode, we can't extract pixels but we can show it's working
+        let (width, height) = engine.dimensions();
+        println!("  � Engine dimensions: {}x{}", width, height);
+    }
+    
+    println!("✅ Headless demo completed successfully!");
+    println!("Note: This minimal headless mode doesn't include rendering pipeline.");
+    println!("For actual pixel buffer extraction, use the full windowed features.");
 }
