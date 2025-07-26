@@ -5,6 +5,7 @@ edition = "2021"
 
 [lib]
 name = "map_bevy"
+path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]

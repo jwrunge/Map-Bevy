@@ -19,7 +19,7 @@ impl MapBevyEngine {
     /// Create a new headless Map-Bevy engine instance
     pub fn new_headless(width: u32, height: u32) -> Self {
         let mut app = App::new();
-        
+
         // Use MinimalPlugins for headless mode - much simpler
         app.add_plugins(MinimalPlugins);
 
@@ -39,7 +39,7 @@ impl MapBevyEngine {
     /// Create a new windowed Map-Bevy engine instance
     pub fn new_windowed(width: u32, height: u32, title: &str) -> Self {
         let mut app = App::new();
-        
+
         // Add full plugins for windowed mode
         app.add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -115,26 +115,4 @@ fn keyboard_input(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
-}
-
-/// Run a simple headless demo - mainly for testing library integration
-pub fn run_headless_demo() {
-    println!("🗺️  Map-Bevy Headless Demo");
-    println!("Creating engine in headless mode...");
-    
-    let mut engine = MapBevyEngine::new_headless(800, 600);
-    
-    println!("Running 10 simulation steps...");
-    for step in 1..=10 {
-        engine.update();
-        println!("Step {}: Engine updated", step);
-        
-        // In minimal mode, we can't extract pixels but we can show it's working
-        let (width, height) = engine.dimensions();
-        println!("  � Engine dimensions: {}x{}", width, height);
-    }
-    
-    println!("✅ Headless demo completed successfully!");
-    println!("Note: This minimal headless mode doesn't include rendering pipeline.");
-    println!("For actual pixel buffer extraction, use the full windowed features.");
 }
