@@ -1,18 +1,27 @@
 # Map-Bevy
 
-A Bevy-based application that builds for both native and WebAssembly (WASM) targets.
+A Bevy-based 3D rendering engine that supports multiple deployment modes: windowed applications, headless rendering with pixel buffer output, and WebAssembly for browsers.
 
 ## Features
 
--   🖥️ Native desktop support (Windows, macOS, Linux)
--   🌐 WebAssembly support for browsers
--   🎮 3D graphics with Bevy engine
--   🔄 Unified codebase for all platforms
+- 🖥️ **Windowed Mode**: Native desktop applications (Windows, macOS, Linux)
+- 🔧 **Headless Mode**: Library usage with pixel buffer output for integration
+- 🌐 **WebAssembly**: Browser support with WebGL2 rendering
+- 📦 **Dual Library/Binary**: Use as a library or standalone application
+- 🎮 **3D Graphics**: Full Bevy engine capabilities
+- 🔄 **Unified Codebase**: Single source for all deployment modes
+
+## Use Cases
+
+- **Development**: Windowed mode for interactive development and debugging
+- **Integration**: Headless mode for embedding in other applications
+- **Web Deployment**: WASM mode for browser-based experiences
+- **Server Rendering**: Headless mode for server-side image generation
 
 ## Prerequisites
 
--   [Rust](https://rustup.rs/) (latest stable)
--   [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) (for WASM builds)
+- [Rust](https://rustup.rs/) (latest stable)
+- [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) (for WASM builds)
 
 ## Quick Start
 
@@ -22,25 +31,31 @@ A Bevy-based application that builds for both native and WebAssembly (WASM) targ
 ./build.sh
 ```
 
-This will:
-
--   Build both native and WASM versions
--   Install required tools if missing
--   Provide instructions for running
+This will build all modes and provide usage instructions.
 
 ### Option 2: Manual builds
 
-#### Native Build
+#### Windowed Mode (Development)
 
 ```bash
 # Debug build
-cargo run
+cargo run --features windowed
 
 # Release build
-cargo run --release
+cargo run --release --features windowed
 ```
 
-#### WASM Build
+#### Headless Mode (Library)
+
+```bash
+# Run as binary
+cargo run --release --features headless --no-default-features
+
+# Run example
+cargo run --example headless --features headless --no-default-features
+```
+
+#### WebAssembly Build
 
 ```bash
 # Add WASM target (one-time setup)
@@ -50,7 +65,7 @@ rustup target add wasm32-unknown-unknown
 curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
 # Build for web
-wasm-pack build --target web --out-dir pkg --release
+wasm-pack build --target web --out-dir pkg --release -- --features windowed
 ```
 
 #### Running WASM Version
@@ -69,12 +84,77 @@ npx serve .
 
 Then open http://localhost:8000 in your browser.
 
+## Library Usage
+
+Map-Bevy can be used as a library in your Rust projects for headless 3D rendering.
+
+### Add to your Cargo.toml
+
+```toml
+[dependencies]
+map-bevy = { path = "path/to/map-bevy", features = ["headless"], default-features = false }
+```
+
+### Basic Usage Example
+
+```rust
+use map_bevy::MapBevyEngine;
+
+fn main() {
+    // Create a headless engine instance
+    let mut engine = MapBevyEngine::new_headless(800, 600);
+    
+    // Run the simulation
+    for frame in 0..60 {
+        engine.update();
+        
+        // Get the rendered frame as pixel data
+        if let Some(pixel_buffer) = engine.get_frame_buffer() {
+            // pixel_buffer contains RGBA data: width * height * 4 bytes
+            // Process or save the frame data...
+            println!("Frame {}: {} bytes", frame, pixel_buffer.len());
+        }
+    }
+}
+```
+
+### API Reference
+
+#### `MapBevyEngine::new_headless(width: u32, height: u32)`
+Creates a new headless engine instance for pixel buffer output.
+*Note: Currently requires additional Bevy plugin configuration to run fully.*
+
+#### `MapBevyEngine::new_windowed(width: u32, height: u32, title: &str)` *(windowed feature)*
+Creates a windowed application for development and debugging. ✅ **Fully Working**
+
+#### `engine.update()`
+Advances the simulation by one frame.
+
+#### `engine.get_frame_buffer() -> Option<Vec<u8>>`
+Returns the current frame as RGBA pixel data (headless mode only).
+
+#### `engine.dimensions() -> (u32, u32)`
+Returns the render target dimensions.
+
+## Current Status
+
+- ✅ **Windowed Mode**: Fully functional for development and debugging
+- ✅ **WASM Mode**: Browser deployment with WebGL2 rendering  
+- ⚠️ **Headless Mode**: Framework implemented, requires additional Bevy plugin setup
+- ✅ **Dual Library/Binary**: Clean API structure for both use cases
+- ✅ **Multi-target Build**: Native and WASM compilation working
+
 ## Project Structure
 
 ```
 Map-Bevy/
 ├── src/
-│   └── main.rs          # Main application code
+│   ├── lib.rs           # Library interface
+│   ├── main.rs          # Binary application
+│   ├── scene.rs         # 3D scene setup
+│   └── renderer.rs      # Rendering utilities
+├── examples/
+│   └── headless.rs      # Headless usage example
 ├── Cargo.toml           # Rust dependencies and configuration
 ├── index.html           # HTML page for WASM version
 ├── build.sh             # Automated build script
@@ -85,21 +165,22 @@ Map-Bevy/
 ## Configuration
 
 The `Cargo.toml` is configured with:
-
--   Platform-specific dependencies
--   Optimized Bevy features for each target
--   WASM-specific optimizations
+- **Feature flags**: `windowed` and `headless` modes
+- **Target-specific dependencies**: Platform optimizations
+- **Dual crate types**: Both library (`rlib`) and WASM (`cdylib`)
 
 ## Controls
 
--   **ESC**: Exit application (native only)
--   The camera automatically rotates around the scene
+- **ESC**: Exit application (windowed mode only)
+- The camera automatically rotates around the scene
 
 ## Deployment
 
-### Native
-
+### Native Binary
 The native executable is located at `target/release/map-bevy` (or `map-bevy.exe` on Windows).
+
+### Library
+Use as a dependency with the `headless` feature for pixel buffer access.
 
 ### WASM
 
