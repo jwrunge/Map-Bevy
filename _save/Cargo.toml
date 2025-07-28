@@ -1,0 +1,92 @@
+[package]
+name = "Map-Bevy"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "map_bevy"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "map-bevy"
+path = "src/main.rs"
+
+[dependencies]
+# Shared Bevy features for all targets
+bevy = { version = "0.16.1", default-features = false, features = [
+    "bevy_asset",
+    "bevy_state", 
+    "bevy_core_pipeline",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_pbr",           # For 3D materials and lighting
+    "bevy_image",         # For image asset handling
+    "png",
+] }
+
+# Optional windowing support
+bevy_winit = { version = "0.16.1", optional = true }
+
+# Native-specific dependencies
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bevy = { version = "0.16.1", default-features = false, features = [
+    "x11",              # Linux X11 support
+    "wayland",          # Linux Wayland support
+    "dynamic_linking",  # Faster compile times for development
+] }
+
+# WASM-specific dependencies  
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+bevy = { version = "0.16.1", default-features = false, features = [
+    "webgl2",           # WebGL2 rendering for browsers
+] }
+wasm-bindgen = "0.2"
+web-sys = "0.3"
+
+[features]
+default = ["windowed"]
+windowed = ["bevy_winit", "bevy/bevy_winit"]
+headless = []
+dev = [
+    "bevy/dynamic_linking",
+]
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+# Bevy-specific optimizations for faster compilation
+[profile.dev.package.bevy_dylib]
+opt-level = 1
+[profile.dev.package.bevy_render]
+opt-level = 3
+[profile.dev.package.bevy_ecs]
+opt-level = 3
+[profile.dev.package.bevy_utils]
+opt-level = 3
+
+# Enable more optimization in the release profile at the cost of compile time.
+[profile.release]
+# Compile the entire crate as one unit.
+# Slows compile times, marginal improvements.
+codegen-units = 1
+# Do a second optimization pass over the entire program, including dependencies.
+# Slows compile times, marginal improvements.
+lto = "thin"
+
+# Optimize for size in the wasm-release profile to reduce load times and bandwidth usage on web.
+[profile.wasm-release]
+# Default to release profile values.
+inherits = "release"
+# Optimize with size in mind (also try "z", sometimes it is better).
+# Slightly slows compile times, great improvements to file size and runtime performance.
+opt-level = "s"
+# Strip all debugging information from the binary to slightly reduce file size.
+strip = "debuginfo"
